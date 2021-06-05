@@ -65,8 +65,8 @@ print(wine.groupby(['type'])[['sugar','pH', 'alcohol']].agg(['count', 'mean', 's
 # 2번 계수와 절편이 포함된 통계표 
 print("===============================================계수와 절편이 포함된 통계표<logit model>=============================================== ")
 dependent_variable = wine['class']
-independent_variable = wine[['sugar', 'pH', 'alcohol']]
-independent_variables_with_constant = sm.add_constant(independent_variable, prepend=True)
+independent_variables = wine[['sugar', 'pH', 'alcohol']]
+independent_variables_with_constant = sm.add_constant(independent_variables, prepend=True)
 logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
 #logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
 print(logit_model.summary())
@@ -76,16 +76,31 @@ print(logit_model.summary())
 
 
 
-
 # 와인 데이터셋의 quality를 종속변수로 생성
 dependent_variable = wine['class']
 independent_variable = wine[wine.columns.difference(['class'])]
 
 
-#계수 (기울기): coef / 절편 intercept
+#계수 (기울기): coef / 절편 intercept == const
+
+
+
+#4. 새로운 테스트 값 입력 wine type 예측
+print("======================================= 값 예측하기 =============================================")
+new_observations = wine.loc[wine.index.isin(range(10)), independent_variables.columns]
+new_observations_with_constant = sm.add_constant(new_observations, prepend=True)
+y_predicted = logit_model.predict(new_observations_with_constant)
+y_predicted_rounded = [round(score, 2) for score in y_predicted]
+print(y_predicted_rounded)
+print(y_predicted_rounded.coef)
+# [0.23, 0.64, 0.55, 0.62, 0.23, 0.22, 0.4, 0.34, 0.38, 0.81]
 
 
 '''
+계수와 절편 -> 선형함수식 -> 선형회귀모형 -> 선형회귀분석
+z > 0 z의 값이 양수(양성) 
+
+
 wine.csv 파일에는 네 개의 특성(속성)이 있다. alcohol, sugar, pH, class가 있고, 6497개의 데이터가 있다. class의 값이 0이면 레드 와인, 1이면 화이트 와인이다.
 alcohol, sugar, pH의 입력값에 따라 레드 와인인지 화이트 와인인지 예측(이진 분류)하려고 한다.
 다음 요구사항을 만족하도록 프로그래밍 하시오. 라이브러리 사용은 제한이 없고 특성값(입력값)의 표준화가 필요하다. 로지스틱 회귀분석을 사용한다.
@@ -96,5 +111,4 @@ alcohol, sugar, pH의 입력값에 따라 레드 와인인지 화이트 와인�
 4) 새로운 테스트 값을 입력해서 레드 와인인지 화이트 와인인지 예측하고 print하시오.
 5) 예측시에 확률(로지스틱 함수의 출력값)을 print 하시오.
 
-계수와 절편 -> 선형함수식 -> 선형회귀모형 -> 선형회귀분석
 '''
