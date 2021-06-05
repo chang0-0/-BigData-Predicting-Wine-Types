@@ -14,7 +14,7 @@ wine.columns = wine.columns.str.replace(' ','_')
 
 #'type' 이진 값 예측 분류 0 OR 1 
 # 0 = red_wine, 1 = white_wine (값 이진 분류 로지스틱 회귀 모델 사용) 
-wine['type'] = np.where(wine['class'] == 0., 'red', 'white')
+wine['type'] = np.where(wine['class'] == 0, 'red', 'white')
 print("================================================= wine head 위에서 5줄까지 출력 =================================================")
 print(wine.head())
 
@@ -38,7 +38,7 @@ red_wine = wine.loc[wine['type']=='red', 'alcohol']
 white_wine = wine.loc[wine['type']=='white', 'alcohol']
 
 #와인 종류에 따라 당도, 산성도, 도수의 차이 검정
-print("=================================================와인 종류에 따른 당도의 차이 검정=================================================")
+print("=================================================와인 종류에 따른 당도, 산성도, 도수의 차이 검정=================================================")
 print(wine.groupby(['type'])[['sugar','pH', 'alcohol']].agg(['std', 'mean']))
 tstat, pvalue, df = sm.stats.ttest_ind(red_wine, white_wine)
 print('tstat: %.3f pvalue: %.4f' % (tstat, pvalue))
@@ -53,21 +53,33 @@ print(wine.corr())
 g = sns.pairplot(wine, kind='reg', plot_kws={"ci": False, "x_jitter": 0.25, "y_jitter":0.25}, \
 	hue='type', diag_kind='hist', diag_kws={"bins":10, "alpha":1.0}, palette=dict(red="red", white="white"), \
 		markers=["o", "s"], vars=['class', 'alcohol', 'sugar', 'pH'])
-
 print(g)
-plt.suptitle("dsf")
+plt.suptitle('Histograms and Scatter Plots of Type, Alcohol, and Sugar', fontsize=14, horizontalalignment='center', verticalalignment='top', x=0.5, y=0.999)
 plt.show()
 
+#그룹별 기술통게 구하기
+print("================================================그룹별 기술 통계 구하기=====================================================")
+print(wine.groupby(['type'])[['sugar','pH', 'alcohol']].agg(['count', 'mean', 'std']))
+
+# 로지스틱 회귀 분석에서는 회귀식 대신 독립변수와 종속변수를 따로 할당한다.
+# 2번 계수와 절편이 포함된 통계표 
+print("===============================================계수와 절편이 포함된 통계표<logit model>=============================================== ")
+dependent_variable = wine['class']
+independent_variable = wine[['sugar', 'pH', 'alcohol']]
+independent_variables_with_constant = sm.add_constant(independent_variable, prepend=True)
+logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
+#logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
+print(logit_model.summary())
+
+
+# 계수와 절편값을 통한 선형함수식.
 
 
 
 
-
-
-
-my_formula = 'class ~ alcohol + pH + sugar'
-lm = ols(my_formula, data=wine).fit()
-print(lm.summary())
+# 와인 데이터셋의 quality를 종속변수로 생성
+dependent_variable = wine['class']
+independent_variable = wine[wine.columns.difference(['class'])]
 
 
 #계수 (기울기): coef / 절편 intercept
@@ -82,4 +94,7 @@ alcohol, sugar, pH의 입력값에 따라 레드 와인인지 화이트 와인�
 2) 계수와 절편 등이 포함된 통계표를 print 하시오.
 3) 출력된 계수와 절편 값을 이용하여 선형함수식을 만들어 print 하시오.
 4) 새로운 테스트 값을 입력해서 레드 와인인지 화이트 와인인지 예측하고 print하시오.
-5) 예측시에 확률(로지스틱 함수의 출력값)을 print 하시오.'''
+5) 예측시에 확률(로지스틱 함수의 출력값)을 print 하시오.
+
+계수와 절편 -> 선형함수식 -> 선형회귀모형 -> 선형회귀분석
+'''
