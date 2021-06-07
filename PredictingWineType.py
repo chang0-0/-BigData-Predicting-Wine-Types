@@ -4,7 +4,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
-from statsmodels.formula.api import ols, glm
+from statsmodels.formula.api import ols, glm, logit
 from scipy import linalg
 from scipy import stats
 from sklearn.linear_model import LinearRegression
@@ -13,9 +13,11 @@ from sklearn.preprocessing import StandardScaler
 import random
 standardScaler = StandardScaler()
 
+
 #헷갈리지 말기 => 계수 (기울기): coef / 절편 intercept == const
 
 wine = pd.read_csv('wine.csv', sep=',', header=0)
+
 wine.columns = wine.columns.str.replace(' ','_')
 
 #'type' 이진 값 예측 분류 0 OR 1 
@@ -23,6 +25,8 @@ wine.columns = wine.columns.str.replace(' ','_')
 wine['type'] = np.where(wine['class'] == 0, 'red', 'white')
 print("================================================= wine head 위에서 5줄까지 출력 =================================================")
 print(wine.head())
+print(wine.std())
+print(wine.mean())
 
 print("================================================= wine info wine.csv 데이터 타입 표현 =================================================")
 print(wine.info())
@@ -30,6 +34,7 @@ print(wine.info())
 # unstack 함수를 추가하여 그 결과를 가로 방향으로 재구조화한다.
 print("================================================= wine describe =================================================")
 print(wine.describe())
+
 
 
 # groupby함수는 type열의 두 값, 즉 레드와 화이트를 기준으로 데이터셋을 그룹화한다
@@ -45,7 +50,7 @@ white_wine = wine.loc[wine['type']=='white', 'alcohol']
 
 #와인 종류에 따라 당도, 산성도, 도수의 차이 검정
 print("=================================================와인 종류에 따른 당도, 산성도, 도수의 차이 검정=================================================")
-print(wine.groupby(['type'])[['alcohol','sugar', 'pH']].agg(['std', 'mean']))
+print(wine.groupby(['type'])[['class','alcohol','sugar', 'pH']].agg(['std', 'mean']))
 tstat, pvalue, df = sm.stats.ttest_ind(red_wine, white_wine)
 print('tstat: %.3f pvalue: %.4f' % (tstat, pvalue))
 
@@ -65,29 +70,63 @@ print(wine.corr())
 
 #그룹별 기술통게 구하기
 print("================================================그룹별 기술 통계 구하기=====================================================")
-print(wine.groupby(['type'])[['alcohol','sugar', 'pH']].agg(['count', 'mean', 'std']))
+print(wine.groupby(['type'])[['class','alcohol','sugar', 'pH']].agg(['count', 'mean', 'std']))
 
 # 로지스틱 회귀 분석에서는 회귀식 대신 독립변수와 종속변수를 따로 할당한다.
 # 2번 계수와 절편이 포함된 통계표 
-print("===============================================계수와 절편이 포함된 통계표<logit model>=============================================== ")
+
+
+print("===============================================계수와 절편이 포함된 통계표(표준화 전)<logit model>=============================================== ")
 dependent_variable = wine['class']
+print(dependent_variable)
 independent_variables = wine[['alcohol', 'sugar', 'pH']]
+print(independent_variables)
 independent_variables_with_constant = sm.add_constant(independent_variables, prepend=True)
+print(independent_variables_with_constant)
 logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
-#logit_model = smf.glm(output_variable, input_variables, family=sm.families.Binomial()).fit()
 print(logit_model.summary())
+print("\nCoefficients:\n%s" % logit_model.params)
+print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
+
+
+print("===============================================계수와 절편이 포함된 통계표(표준화 후)<logit model>=============================================== ")
+my_formula = 'class~alcohol + sugar + pH'
+from statsmodels.formula.api import ols, glm, logit
+
+
+
+#표준화 작업
+# dependent_variable = wine['class']
+# independent_variables = wine[wine.columns.difference(['alcohol','sugar','pH'])]
+# independent_variables_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
+# wine_standardized = pd.concat([dependent_variable, independent_variables_standardized], axis=1)
+# logit_model = sm.Logit(my_formula, data=wine_standardized).fit()
+
+# print(wine_standardized.describe())
+# print(logit_model.summary())
+
+output_variable = wine['class']
+vars_to_keep = wine[['alcohol', 'sugar', 'pH']]
+inputs_standardized = (vars_to_keep - vars_to_keep.mean()) / vars_to_keep.std()
+input_variables = sm.add_constant(inputs_standardized, prepend=True)
+logit_model = sm.Logit(output_variable, input_variables).fit()
+
+print(logit_model.summary())
+
+# 계수 출력 함수
+print("\nCoefficients:\n%s" % logit_model.params)
+# 계수 오류 출력
+print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
 
 
 # 3번 출력된 계수와 절편을 이용해 선형함수식을 print 하시오.
 print("=============================================== 선형 함수식 ===============================================")
-print("\nLinear(9.4032 + 0.4484*alcohol + 0.444*sugar + 0.0729*pH)")
-
-
+print("\nLinear(1.7963 + 0.5348*alcohol + 1.6700*sugar + -0.7105*pH)")
 
 
 def inverse_logit(model_formula):
 	from math import exp
-	return (1.0 / (1.0 + exp(-model_formula)))*100.0
+	return (1.0 / (1.0 + exp(-model_formula)))
 
 at_means = float(logit_model.params[0]) + \
 	float(logit_model.params[1]) * float(wine['alcohol'].mean()) + \
@@ -100,34 +139,29 @@ print(wine['alcohol'].mean())
 print(wine['sugar'].mean())
 print(wine['pH'].mean())
 print(at_means)
-print("Probability of churn when independent variables are at their mean values: %.2f" % inverse_logit(at_means))
+print("Probability of wine when independent variables are at their mean values: %.2f" % inverse_logit(at_means))
 
-# cust_serv_mean = float(logit_model.params[0]) + \
-# 	float(logit_model.params[1])*float(wine['alcohol'].mean()) + \
-# 	float(logit_model.params[2])*float(wine['sugar'].mean()) + \
-# 	float(logit_model.params[3])*float(wine['pH'].mean())
+cust_serv_mean = float(logit_model.params[0]) + \
+	float(logit_model.params[1])*float(wine['alcohol'].mean()) + \
+	float(logit_model.params[2])*float(wine['sugar'].mean()) + \
+	float(logit_model.params[3])*float(wine['pH'].mean())
 		
-# cust_serv_mean_minus_one = float(logit_model.params[0]) + \
-# 		float(logit_model.params[1])*float(wine['alcohol'].mean()) + \
-# 		float(logit_model.params[2])*float(wine['sugar'].mean()-1.0) + \
-# 		float(logit_model.params[3])*float(wine['pH'].mean())
+cust_serv_mean_minus_one = float(logit_model.params[0]) + \
+		float(logit_model.params[1])*float(wine['alcohol'].mean()) + \
+		float(logit_model.params[2])*float(wine['sugar'].mean()-1.0) + \
+		float(logit_model.params[3])*float(wine['pH'].mean())
 
-# print(cust_serv_mean)
-# print(wine['alcohol'].mean()-1.0)
-# print(cust_serv_mean_minus_one)
-# print("Probability of churn when account length changes by 1: %.2f" % (inverse_logit(cust_serv_mean) - inverse_logit(cust_serv_mean_minus_one)))
+print(cust_serv_mean)
+print(wine['alcohol'].mean()-1.0)
+print(cust_serv_mean_minus_one)
+print("Probability of wine when account length changes by 1: %.2f" % (inverse_logit(cust_serv_mean) - inverse_logit(cust_serv_mean_minus_one)))
 
 
 # 와인 데이터셋의 quality를 종속변수로 생성
-dependent_variable = wine['class']
-independent_variable = wine[wine.columns.difference(['class'])]
-
-
-
 #4. 새로운 테스트 값 입력 wine type 예측 (랜덤으로 난수를 발생시켜 집어넣음)
 
 
-print("들어간 행", random.sample(range(0, 2000), 10))
+print("들어간 행", random.sample(range(0, 6000), 10))
 
 
 print("======================================= 값 예측하기 =============================================")
@@ -138,10 +172,7 @@ y_predicted_rounded = [round(score, 2) for score in y_predicted]
 print(y_predicted_rounded)
 
 
-
-
 # 예측시에 확률 로지스틱 함수와 출력값 print
-
 
 
 '''
@@ -170,11 +201,23 @@ alcohol, sugar, pH의 입력값에 따라 레드 와인인지 화이트 와인�
 
 의문점 4. 식은 내가 직접 작성해야되는가? 맞음
 
+
+
 의문점 5. 예측시에 확률 (로지스틱 함수의 출력값은 무엇을 써야하는가?)
+
+
 
 의문점 6. customer_churn.py 파일에서는 왜 평균값을 사용했는가? (차이점 구별하기)
 
+
 의문점 7. 고객이탈 파일에서 표준화를 진행한다면 과연 값이 얼마나 변하는 가?
+
+표준화 진행했음 근데 제대로 된건지 모르겠음
+그리고 제대로 됬는지 확인이 안되는 이유
+분명 수업시간에 custserv_calls 부분이 가장 높은 계수를 가진다고 했는데
+표준화를 똑같이 진행하고 나니까 total_charge 부분이 계수가 가장 높아짐.
+
+
 
 의문점 8. 과연 표준화를 진행했을 경우 값이 더 커지는 경우가 있는가?
 가령, 고객이탈 자료에서 분명 고객센터에 전화한 횟수가 증가할경우 고객이 이탈할 경우가 높아지는데
