@@ -75,53 +75,56 @@ print(wine.groupby(['type'])[['class','alcohol','sugar', 'pH']].agg(['count', 'm
 # 로지스틱 회귀 분석에서는 회귀식 대신 독립변수와 종속변수를 따로 할당한다.
 # 2번 계수와 절편이 포함된 통계표 
 
-
-print("===============================================계수와 절편이 포함된 통계표(표준화 전)<logit model>=============================================== ")
+print("===============================================계수와 절편이 포함된 통계표(표준화 작업 후, 상수항 추가)<logit model>=============================================== ")
 dependent_variable = wine['class']
-print(dependent_variable)
 independent_variables = wine[['alcohol', 'sugar', 'pH']]
-print(independent_variables)
-independent_variables_with_constant = sm.add_constant(independent_variables, prepend=True)
-print(independent_variables_with_constant)
-logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
+independent_variables_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
+independent_variables_standardized = sm.add_constant(independent_variables_standardized)
+print(independent_variables_standardized)
+logit_model = sm.Logit(dependent_variable, independent_variables_standardized).fit()
+
+
 print(logit_model.summary())
 print("\nCoefficients:\n%s" % logit_model.params)
 print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
 
-
-print("===============================================계수와 절편이 포함된 통계표(표준화 후)<logit model>=============================================== ")
-my_formula = 'class~alcohol + sugar + pH'
-from statsmodels.formula.api import ols, glm, logit
+# 기존 customer방식으로 표준화를 진행할 예정 아무리 봐도 맞는거같음 (단, 상수항을 추가하지않았음.)
 
 
+# print("===============================================계수와 절편이 포함된 통계표(표준화 후)<logit model>=============================================== ")
+# my_formula = 'class~alcohol + sugar + pH'
+# from statsmodels.formula.api import ols, glm, logit
+# from sklearn.preprocessing import StandardScaler
+# standardScaler = StandardScaler()
 
-#표준화 작업
-# dependent_variable = wine['class']
-# independent_variables = wine[wine.columns.difference(['alcohol','sugar','pH'])]
-# independent_variables_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
-# wine_standardized = pd.concat([dependent_variable, independent_variables_standardized], axis=1)
-# logit_model = sm.Logit(my_formula, data=wine_standardized).fit()
 
-# print(wine_standardized.describe())
+# #표준화 작업
+# # dependent_variable = wine['class']
+# # independent_variables = wine[wine.columns.difference(['alcohol','sugar','pH'])]
+# # independent_variables_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
+# # wine_standardized = pd.concat([dependent_variable, independent_variables_standardized], axis=1)
+# # logit_model = sm.Logit(my_formula, data=wine_standardized).fit()
+
+# # print(wine_standardized.describe())
+# # print(logit_model.summary())
+
+# output_variable = wine['class']
+# vars_to_keep = wine[['alcohol', 'sugar', 'pH']]
+# inputs_standardized = (vars_to_keep - vars_to_keep.mean()) / vars_to_keep.std()
+# input_variables = sm.add_constant(inputs_standardized, prepend=True)
+# logit_model = sm.Logit(output_variable, input_variables).fit()
+
 # print(logit_model.summary())
 
-output_variable = wine['class']
-vars_to_keep = wine[['alcohol', 'sugar', 'pH']]
-inputs_standardized = (vars_to_keep - vars_to_keep.mean()) / vars_to_keep.std()
-input_variables = sm.add_constant(inputs_standardized, prepend=True)
-logit_model = sm.Logit(output_variable, input_variables).fit()
-
-print(logit_model.summary())
-
-# 계수 출력 함수
-print("\nCoefficients:\n%s" % logit_model.params)
-# 계수 오류 출력
-print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
+# # 계수 출력 함수
+# print("\nCoefficients:\n%s" % logit_model.params)
+# # 계수 오류 출력
+# print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
 
 
 # 3번 출력된 계수와 절편을 이용해 선형함수식을 print 하시오.
 print("=============================================== 선형 함수식 ===============================================")
-print("\nLinear(1.7963 + 0.5348*alcohol + 1.6700*sugar + -0.7105*pH)")
+print("\nLinear(1.7963 + 0.5348*alcohol + 1.6700*sugar + (-0.7105*pH)")
 
 
 def inverse_logit(model_formula):
@@ -211,6 +214,11 @@ alcohol, sugar, pH의 입력값에 따라 레드 와인인지 화이트 와인�
 
 
 의문점 7. 고객이탈 파일에서 표준화를 진행한다면 과연 값이 얼마나 변하는 가?
+
+의문점 8. 상수항 추가한 표준화 계수와 상수항 추가하지않은 표준화 계수가 값이 다르지 않음 무슨차이?
+
+
+
 
 표준화 진행했음 근데 제대로 된건지 모르겠음
 그리고 제대로 됬는지 확인이 안되는 이유
