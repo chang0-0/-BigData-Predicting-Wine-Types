@@ -24,9 +24,6 @@ wine.columns = wine.columns.str.replace(' ','_').str.replace("\'", "")
 wine['type'] = np.where(wine['class'] == 0.0, 'red', 'white')
 print("================================================= wine head 위에서 5줄까지 출력 =================================================")
 print(wine.head())
-print(wine.std())
-print(wine.mean())
-
 print("================================================= wine info wine.csv 데이터 타입 표현 =================================================")
 print(wine.info())
 
@@ -83,21 +80,40 @@ print("===============================================계수와 절편이 포함
 # logit_model = sm.Logit(dependent_variable, independent_variables_standardized).fit()
 
 # 학습 전에 일단 표준화 부터 실행 상수행 기존 행 삭제. add_cosntant
-
+# 'class, type'를 제외한 모든 column들을 feature로 삼으려면,
 columns_selected = "+".join(wine.columns.difference(["class", "type"]))
 my_formula = "class ~ " + columns_selected
 from statsmodels.formula.api import ols, glm, logit
 
 dependent_variable = wine['class']
 independent_variables = wine[['alcohol', 'sugar', 'pH']]
+print("출력 값 테스트")
+print(wine.info())
+print(independent_variables)
+
 independent_variables_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
 independent_variables_with_constant = sm.add_constant(independent_variables_standardized, prepend=True)
-
-print(wine.info())
-print(my_formula)
-
 wine_standardized = pd.concat([dependent_variable, independent_variables_with_constant], axis=1)
 
+print(wine_standardized)
+
+
+logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
+
+
+# 기존의 데이터값에서 표준화는 하지 않고 상수항만 추가한 상태에서 odds 값을추가함.
+independent_variables_with_constant2 = sm.add_constant(independent_variables, prepend=True)
+logit_model2 = sm.Logit(dependent_variable, independent_variables_with_constant2).fit()
+
+
+print(logit_model.summary())
+print("기존의 데이터에서 상수항만 추가하고 표준화는 진행하지 않은 로지스트모델 값.")
+print(logit_model2.summary())
+
+
+# 상수항을 추가하지않은 표준화 데이터를 만들어보자.
+# independent_variables_standardized2 = (independent_variables - independent_variables.mean()) / independent_variables.std()
+# wine_standardized2 = pd.concat([dependent_variable, independent_variables_standardized2], axis=1)
 
 #결론은 표준화된 독립변수들 사이에서 전체 앞의 종속변수 와 axis=1 하나의 행으로 합친다는 의미를 가짐.
 
@@ -108,18 +124,13 @@ print("표준화 된 독립변수 출력\n", independent_variables_standardized)
 print("전체 표준화 axis 값 출력\n", wine_standardized)
 print(independent_variables_with_constant)
 
-logit_model = ols(dependent_variable, independent_variables_with_constant).fit()
 
 # ⭐⭐⭐⭐ 상위 결과 값 logit(로지스트 회귀분석에서)cosnt 값이 출력되는데 Intercept 의 값을 출력시켜보자.⭐⭐⭐⭐
-# 참고로 intercept 가 나와도 cosnt의 계수값은 똑같이 나온다는 점을 다른 고객이탈 데이터 결과값으로 알수 있음.
-logit_model2 = ols(formula=my_formula, data=wine).fit()
+# 참고로 intercept 가 나와도 const 계수값은 똑같이 나온다는 점을 다른 고객이탈 데이터 결과값으로 알수 있음.
+# 밑에 줄 안되니까 일단 넘어가는걸로 ols 도대체 왜 안먹히는 거임?
+# logit_model2 = ols(formula=my_formula, data=wine_standardized2).fit()
+# print(logit_model2.summary())
 
-print(logit_model2.summary())
-
-
-
-
-print(logit_model.summary())
 print("\nCoefficients:\n%s" % logit_model.params)
 print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
 
@@ -161,9 +172,11 @@ print("\nCoefficient Std Errors:\n%s" % logit_model.bse)
 
 # 3번 출력된 계수와 절편을 이용해 선형함수식을 print 하시오.
 print("=============================================== 선형 함수식 ===============================================")
-print("\invlogit(1.8023 + 0.5350*alcohol + 1.6808*sugar + (-0.7100*pH)")
+print("\n (Logit)y=(1.8023 + 0.5350*alcohol + 1.6808*sugar + (-0.7101)*pH")
+print("\n (OLS) y=(0.7539 + 0.0816*alcohol +  0.1501*sugar + (-0.1115)*pH")
 
 
+# 4번. 새로운 테스트 값을 입력해서 레드 와인인지 화이트 와인인지 예측하고 print 하시오.
 print("==========================================odds 적용=========================================")
 # 회귀계수 해석
 # 회귀계수가 종속변수의 성공 확률에 미치는 영향을 파악하기 위해서는 모형 평가의 기준, 
@@ -176,10 +189,10 @@ def inverse_logit(model_formula):
 	from math import exp
 	return (1.0 / (1.0 + exp(-model_formula)))*100.0
 
-at_means = float(logit_model.params[0]) + \
-	float(logit_model.params[1]) * float(wine['alcohol'].mean()) + \
-	float(logit_model.params[2]) * float(wine['sugar'].mean()) + \
-	float(logit_model.params[3]) * float(wine['pH'].mean())
+at_means = float(logit_model2.params[0]) + \
+	float(logit_model2.params[1]) * float(wine['alcohol'].mean()) + \
+	float(logit_model2.params[2]) * float(wine['sugar'].mean()) + \
+	float(logit_model2.params[3]) * float(wine['pH'].mean())
 
 print(wine['alcohol'].mean())
 print(wine['sugar'].mean())
@@ -187,15 +200,15 @@ print(wine['pH'].mean())
 print(at_means)
 print("Probability of wine when independent variables are at their mean values: %.2f" % inverse_logit(at_means))
 
-alcohol_mean = float(logit_model.params[0]) + \
-	float(logit_model.params[1])*float(wine['alcohol'].mean()) + \
-	float(logit_model.params[2])*float(wine['sugar'].mean()) + \
-	float(logit_model.params[3])*float(wine['pH'].mean())
+alcohol_mean = float(logit_model2.params[0]) + \
+	float(logit_model2.params[1])*float(wine['alcohol'].mean()) + \
+	float(logit_model2.params[2])*float(wine['sugar'].mean()) + \
+	float(logit_model2.params[3])*float(wine['pH'].mean())
 		
-alcohol_mean_minus_one = float(logit_model.params[0]) + \
-		float(logit_model.params[1])*float(wine['alcohol'].mean()-1.0) + \
-		float(logit_model.params[2])*float(wine['sugar'].mean()) + \
-		float(logit_model.params[3])*float(wine['pH'].mean())
+alcohol_mean_minus_one = float(logit_model2.params[0]) + \
+		float(logit_model2.params[1])*float(wine['alcohol'].mean()-1.0) + \
+		float(logit_model2.params[2])*float(wine['sugar'].mean()) + \
+		float(logit_model2.params[3])*float(wine['pH'].mean())
 
 print(alcohol_mean)
 print(wine['alcohol'].mean()-1.0)
@@ -207,16 +220,14 @@ print("Probability of wine when sugar changes by 1: %.2f" % (inverse_logit(alcoh
 #4번 .새로운 테스트 값 입력 wine type 예측
 
 print("=======================================기존 데이터 셋의 첫 10개 값을 가지고 새로운 관측값 데이터 셋을 만듦 =============================================")
-# Predict churn for "new" observations
-print(independent_variables.columns)
 new_observations = wine.loc[wine.index.isin(range(10)), independent_variables.columns]
-y_predicted = logit_model.predict(new_observations)
-print(y_predicted)
-
+new_observations_with_constant = sm.add_constant(new_observations, prepend=True)
+y_predicted = logit_model2.predict(new_observations_with_constant)
+y_predicted_rounded = [round(score, 2) for score in y_predicted]
+print(y_predicted_rounded)
 
 
 # 예측시에 확률 로지스틱 함수와 출력값 print
-
 
 '''
 계수와 절편 -> 선형함수식 -> 선형회귀모형 -> 선형회귀분석
