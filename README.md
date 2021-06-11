@@ -7,3 +7,5 @@ a=σ(z)=11+e−z
 ![image](https://user-images.githubusercontent.com/74912130/121310426-553abc00-c93e-11eb-8c4e-fb5907534201.png)
 
 이는 궁극적으로 Logistic Regression이 특정 데이터가 positive class에 속할 확률을 계산하게 합니다.
+
+와인예측 모델 코드 (라이브러리 사용한 코드 파일 추가)
