@@ -16,9 +16,6 @@ standardScaler = StandardScaler()
 6/9 마지막 단계 odds 비교 하고 끝났음.
 '''
 
-
-
-
 #헷갈리지 말기 => 계수 (기울기): coef / 절편 intercept == const
 
 wine = pd.read_csv('wine.csv', sep=',', header=0)
@@ -36,8 +33,6 @@ print(wine.info())
 # unstack 함수를 추가하여 그 결과를 가로 방향으로 재구조화한다.
 print("================================================= wine describe =================================================")
 print(wine.describe())
-
-
 
 # groupby함수는 type열의 두 값, 즉 레드와 화이트를 기준으로 데이터셋을 그룹화한다
 # 이때 대괄호를 사용한다. 
@@ -96,8 +91,11 @@ independent_variables = wine[['alcohol', 'sugar', 'pH']]
 independent_variables_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
 independent_variables_with_constant = sm.add_constant(independent_variables_standardized, prepend=True)
 
-
 logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
+
+print(dependent_variable)
+print(independent_variables_with_constant)
+
 
 
 # 기존의 데이터값에서 표준화는 하지 않고 상수항만 추가한 상태에서 odds 값을추가함.
@@ -105,7 +103,7 @@ wine_standardized = pd.concat([dependent_variable, independent_variables_with_co
 independent_variables_with_constant2 = sm.add_constant(independent_variables, prepend=True)
 logit_model2 = sm.Logit(dependent_variable, independent_variables_with_constant2).fit()
 
-
+print("표준화 x 상수항 추가 결과값.")
 print(logit_model.summary())
 # print("기존의 데이터에서 상수항만 추가하고 표준화는 진행하지 않은 로지스트모델 값.")
 # print(logit_model2.summary())
