@@ -12,6 +12,12 @@ from sklearn.preprocessing import StandardScaler
 import random
 standardScaler = StandardScaler()
 
+''' 
+6/9 마지막 단계 odds 비교 하고 끝났음.
+'''
+
+
+
 
 #헷갈리지 말기 => 계수 (기울기): coef / 절편 intercept == const
 
@@ -87,28 +93,22 @@ from statsmodels.formula.api import ols, glm, logit
 
 dependent_variable = wine['class']
 independent_variables = wine[['alcohol', 'sugar', 'pH']]
-print("출력 값 테스트")
-print(wine.info())
-print(independent_variables)
-
 independent_variables_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
 independent_variables_with_constant = sm.add_constant(independent_variables_standardized, prepend=True)
-wine_standardized = pd.concat([dependent_variable, independent_variables_with_constant], axis=1)
-
-print(wine_standardized)
 
 
 logit_model = sm.Logit(dependent_variable, independent_variables_with_constant).fit()
 
 
 # 기존의 데이터값에서 표준화는 하지 않고 상수항만 추가한 상태에서 odds 값을추가함.
+wine_standardized = pd.concat([dependent_variable, independent_variables_with_constant], axis=1)
 independent_variables_with_constant2 = sm.add_constant(independent_variables, prepend=True)
 logit_model2 = sm.Logit(dependent_variable, independent_variables_with_constant2).fit()
 
 
 print(logit_model.summary())
-print("기존의 데이터에서 상수항만 추가하고 표준화는 진행하지 않은 로지스트모델 값.")
-print(logit_model2.summary())
+# print("기존의 데이터에서 상수항만 추가하고 표준화는 진행하지 않은 로지스트모델 값.")
+# print(logit_model2.summary())
 
 
 # 상수항을 추가하지않은 표준화 데이터를 만들어보자.
@@ -185,14 +185,15 @@ print("==========================================odds 적용====================
 # odds값은 그 자체로서는 그다지 의미가 없으므로 먼저 모든 독립변수를 평균으로 설정하여
 # 모형을 평가해야 한다.
 
+# 로지스트 역함수(시그모이드 함수) 이친구가 핵심 이었음...
 def inverse_logit(model_formula):
 	from math import exp
-	return (1.0 / (1.0 + exp(-model_formula)))*100.0
+	return (1.0 / (1.0 + exp(-model_formula)))
 
-at_means = float(logit_model2.params[0]) + \
-	float(logit_model2.params[1]) * float(wine['alcohol'].mean()) + \
-	float(logit_model2.params[2]) * float(wine['sugar'].mean()) + \
-	float(logit_model2.params[3]) * float(wine['pH'].mean())
+at_means = float(logit_model.params[0]) + \
+	float(logit_model.params[1]) * float(wine['alcohol'].mean()) + \
+	float(logit_model.params[2]) * float(wine['sugar'].mean()) + \
+	float(logit_model.params[3]) * float(wine['pH'].mean())
 
 print(wine['alcohol'].mean())
 print(wine['sugar'].mean())
@@ -200,34 +201,76 @@ print(wine['pH'].mean())
 print(at_means)
 print("Probability of wine when independent variables are at their mean values: %.2f" % inverse_logit(at_means))
 
-alcohol_mean = float(logit_model2.params[0]) + \
-	float(logit_model2.params[1])*float(wine['alcohol'].mean()) + \
-	float(logit_model2.params[2])*float(wine['sugar'].mean()) + \
-	float(logit_model2.params[3])*float(wine['pH'].mean())
+sugar_mean = float(logit_model.params[0]) + \
+	float(logit_model.params[1])*float(wine['alcohol'].mean()) + \
+	float(logit_model.params[2])*float(wine['sugar'].mean()) + \
+	float(logit_model.params[3])*float(wine['pH'].mean())
 		
-alcohol_mean_minus_one = float(logit_model2.params[0]) + \
-		float(logit_model2.params[1])*float(wine['alcohol'].mean()-1.0) + \
-		float(logit_model2.params[2])*float(wine['sugar'].mean()) + \
-		float(logit_model2.params[3])*float(wine['pH'].mean())
+sugar_mean_minus_one = float(logit_model.params[0]) + \
+		float(logit_model.params[1])*float(wine['alcohol'].mean()) + \
+		float(logit_model.params[2])*float(wine['sugar'].mean()-1.0) + \
+		float(logit_model.params[3])*float(wine['pH'].mean())
 
-print(alcohol_mean)
-print(wine['alcohol'].mean()-1.0)
-print(alcohol_mean_minus_one)
-print("Probability of wine when sugar changes by 1: %.2f" % (inverse_logit(alcohol_mean) - inverse_logit(alcohol_mean_minus_one)))
-# 알코올이 한단위 증가할경우 레드와인이 될 확률
+print(sugar_mean)
+print(wine['sugar'].mean()-1.0)
+print(sugar_mean_minus_one)
+print("Probability of wine when sugar changes by 1: %.2f" % (inverse_logit(sugar_mean) - inverse_logit(sugar_mean_minus_one)))
+# 설탕이 한단위 증가할경우 레드와인이 될 확률
 
 # 와인 데이터셋의 quality를 종속변수로 생성
 #4번 .새로운 테스트 값 입력 wine type 예측
 
+print(logit_model.coef)
+
+
+
 print("=======================================기존 데이터 셋의 첫 10개 값을 가지고 새로운 관측값 데이터 셋을 만듦 =============================================")
-new_observations = wine.loc[wine.index.isin(range(10)), independent_variables.columns]
-new_observations_with_constant = sm.add_constant(new_observations, prepend=True)
-y_predicted = logit_model2.predict(new_observations_with_constant)
-y_predicted_rounded = [round(score, 2) for score in y_predicted]
-print(y_predicted_rounded)
+print(independent_variables_standardized.columns)
+
+# new_observations = wine.loc[wine.index.isin(range(10)), independent_variables.columns]
+# new_observations_with_constant = sm.add_constant(new_observations, prepend=True)
+# y_predicted = logit_model.predict(new_observations_with_constant)
+# y_predicted_rounded = [round(score, 2) for score in y_predicted]
+# print(y_predicted_rounded)
+
+# Predict output value for a new observation based on its mean standardized input values
+input_variables = [[1., 1., 1., 1.]]
+predicted_value = logit_model.predict(input_variables)
+print("Predicted value: %.5f" % predicted_value) 
+
+
+
+
+
+
+#위에서 어떤 부분이 문제인지 잘 생각해보자 지금순서는 표준화를 진행한뒤에
+# 상수항을 추가해서 학습시킨 logit_model이다. 
+# 그럼 상수항을 추가시킨뒤에 표준화를 진행해서 학습을 시켜야하나?
+# 아니면 위에서 어떤 logit_model에서 문제가 생긴건가 확인을 해보자.
+# 
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # 예측시에 확률 로지스틱 함수와 출력값 print
+
+
+
+
+
+
+
 
 '''
 계수와 절편 -> 선형함수식 -> 선형회귀모형 -> 선형회귀분석
