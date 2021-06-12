@@ -96,6 +96,19 @@ new_value = float(logit_model.params[0]) + \
 print("새로운 값을 넣어서 예측한 결과 %.2f" % new_value)
 
 
+# Predict churn for "new" observations
+print(independent_variables.columns)
+new_observations = churn.loc[churn.index.isin(range(10)), independent_variables.columns]
+new_observations_with_constant = sm.add_constant(new_observations, prepend=True)
+y_predicted = logit_model.predict(new_observations_with_constant)
+y_predicted_rounded = [round(score, 2) for score in y_predicted]
+print(y_predicted_rounded)
+
+# 새로운 값 넣어서 예측
+input_variables = [0., 0., 0., 1.]
+predicted_value = logit_model.predict(input_variables)
+print("Predicted value: %.5f" % predicted_value) 
+
 # 로지스틱회귀 분석 모델 그래프 그림
 # z = np.arange(-5, 5, 0.1)
 # phi = 1 / (1 + np.exp(-z))
