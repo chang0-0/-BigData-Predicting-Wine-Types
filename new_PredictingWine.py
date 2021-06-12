@@ -87,7 +87,6 @@ def inverse_logit(model_formula):
     from math import exp
     return (1.0 / (1.0 + exp(-model_formula)))
 
-
 new_value = float(logit_model.params[0]) + \
         float(logit_model.params[1])*float(9.0) + \
         float(logit_model.params[2])*float(1.1) + \
@@ -95,19 +94,19 @@ new_value = float(logit_model.params[0]) + \
 
 print("새로운 값을 넣어서 예측한 결과 %.2f" % new_value)
 
-
-# Predict churn for "new" observations
-print(independent_variables.columns)
-new_observations = churn.loc[churn.index.isin(range(10)), independent_variables.columns]
-new_observations_with_constant = sm.add_constant(new_observations, prepend=True)
-y_predicted = logit_model.predict(new_observations_with_constant)
-y_predicted_rounded = [round(score, 2) for score in y_predicted]
-print(y_predicted_rounded)
-
 # 새로운 값 넣어서 예측
 input_variables = [0., 0., 0., 1.]
 predicted_value = logit_model.predict(input_variables)
 print("Predicted value: %.5f" % predicted_value) 
+
+output_variable = wine['class']
+vars_to_keep = wine[['alcohol', 'sugar', 'pH']]
+inputs_standardized = (vars_to_keep - vars_to_keep.mean()) / vars_to_keep.std()
+input_variables = sm.add_constant(inputs_standardized, prepend=False)
+logit_model = sm.Logit(output_variable, input_variables).fit()
+print(logit_model.summary())
+print(logit_model.params)
+print(logit_model.bse)
 
 # 로지스틱회귀 분석 모델 그래프 그림
 # z = np.arange(-5, 5, 0.1)
@@ -118,5 +117,4 @@ print("Predicted value: %.5f" % predicted_value)
 # plt.ylabel('phi')
 # plt.show()
 
-# 여기서 부터 4번 5번 문제 실행 
-# 새로운 입력값을 받아서 예측 테스트
+
