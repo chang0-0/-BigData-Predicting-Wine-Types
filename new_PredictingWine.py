@@ -41,28 +41,26 @@ wine_target = wine['class'].to_numpy()
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 
+# print("사이킷런 라이브러리 표준화")
+# train_input, test_input, train_target, test_target = train_test_split(wine_input, wine_target)
+# ss = StandardScaler()
+# train_scaled = ss.fit_transform(train_input)
+# test_scaled = ss.transform(test_input)
 
-print("사이킷런 라이브러리 표준화")
-train_input, test_input, train_target, test_target = train_test_split(wine_input, wine_target)
-ss = StandardScaler()
-train_scaled = ss.fit_transform(train_input)
-test_scaled = ss.transform(test_input)
+# #표준화 완료.
+# print(test_scaled)
+# print(wine_target)
 
-#표준화 완료.
-print(test_scaled)
-print(wine_target)
+# wine_indexes = (train_target == 0) | (train_target == 1)
+# train_wine = train_scaled[wine_indexes]
+# target_wine = train_target[wine_indexes]
 
-wine_indexes = (train_target == 0) | (train_target == 1)
-train_wine = train_scaled[wine_indexes]
-target_wine = train_target[wine_indexes]
-
-from sklearn.linear_model import LogisticRegression
-logit = LogisticRegression()
-logit.fit(train_scaled, target_wine)
+# from sklearn.linear_model import LogisticRegression
+# logit = LogisticRegression()
+# logit.fit(train_scaled, target_wine)
 
 print("================================================= 통계량 출력 =================================================")
 print(wine.groupby(['class'])[['alcohol', 'sugar', 'pH']].agg(['count', 'mean', 'std', 'min', 'max']))
-
 
 dependent_variable = wine['class']
 independent_variable = wine[['alcohol', 'sugar', 'pH']]
@@ -72,16 +70,15 @@ logit_model = sm.Logit(dependent_variable, independent_variable_constand).fit()
 print(logit_model.summary())
 print("\nCoefficients:\n%s" % logit_model.params)
 
-print(logit.predict(train_wine[:5]))
-print(logit.predict_proba(train_wine[:5]))
-print(logit.classes_)
-print("계수와 절편 출력")
-print(logit.coef_, logit.intercept_)
-
+# print(logit_model.predict(train_wine[:5]))
+# print(logit_model.predict_proba(train_wine[:5]))
+# print(logit_model.classes_)
+# print("계수와 절편 출력")
+# print(logit_model.coef_, logit_model.intercept_)
 
 # 추가문제. 라이브러리를 사용해서 출력된값으로 Logist Regression Result를 출력해보자.
 # 라이브러리 사용 결과값. 
-print("y = 1.7963 + 0.5348*alcohol + 1.6700*sugar + (-0.7105)*pH")
+print("y = 1.7963 + 0.5348*alcohol + 1.6700*sugar - 0.7105)*pH")
 
 def inverse_logit(model_formula):
     from math import exp
@@ -93,11 +90,6 @@ new_value = float(logit_model.params[0]) + \
         float(logit_model.params[3])*float(3.0)
 
 print("새로운 값을 넣어서 예측한 결과 %.2f" % new_value)
-
-# 새로운 값 넣어서 예측
-input_variables = [0., 0., 0., 1.]
-predicted_value = logit_model.predict(input_variables)
-print("Predicted value: %.5f" % predicted_value) 
 
 output_variable = wine['class']
 vars_to_keep = wine[['alcohol', 'sugar', 'pH']]

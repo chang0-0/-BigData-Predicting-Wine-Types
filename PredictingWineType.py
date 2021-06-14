@@ -225,20 +225,16 @@ print(logit_model.coef)
 print("=======================================기존 데이터 셋의 첫 10개 값을 가지고 새로운 관측값 데이터 셋을 만듦 =============================================")
 print(independent_variables_standardized.columns)
 
-# new_observations = wine.loc[wine.index.isin(range(10)), independent_variables.columns]
-# new_observations_with_constant = sm.add_constant(new_observations, prepend=True)
-# y_predicted = logit_model.predict(new_observations_with_constant)
-# y_predicted_rounded = [round(score, 2) for score in y_predicted]
-# print(y_predicted_rounded)
+new_observations = wine.loc[wine.index.isin(range(10)), independent_variables.columns]
+new_observations_with_constant = sm.add_constant(new_observations, prepend=True)
+y_predicted = logit_model.predict(new_observations_with_constant)
+y_predicted_rounded = [round(score, 2) for score in y_predicted]
+print(y_predicted_rounded)
 
 # Predict output value for a new observation based on its mean standardized input values
 input_variables = [[1., 1., 1., 1.]]
 predicted_value = logit_model.predict(input_variables)
 print("Predicted value: %.5f" % predicted_value) 
-
-
-
-
 
 
 #위에서 어떤 부분이 문제인지 잘 생각해보자 지금순서는 표준화를 진행한뒤에
