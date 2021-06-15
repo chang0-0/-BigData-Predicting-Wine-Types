@@ -63,11 +63,13 @@ print("================================================= 통계량 출력 ======
 print(wine.groupby(['class'])[['alcohol', 'sugar', 'pH']].agg(['count', 'mean', 'std', 'min', 'max']))
 
 dependent_variable = wine['class']
-independent_variable = wine[['alcohol', 'sugar', 'pH']]
-independent_variable_standardized = (independent_variable - independent_variable.mean()) / independent_variable.std()
+independent_variables = wine[['alcohol', 'sugar', 'pH']]
+independent_variable_standardized = (independent_variables - independent_variables.mean()) / independent_variables.std()
 independent_variable_constand = sm.add_constant(independent_variable_standardized, prepend=True)
 logit_model = sm.Logit(dependent_variable, independent_variable_constand).fit()
-print(logit_model.summary())
+print(logit_model.params)
+print(logit_model.bse)
+
 print("\nCoefficients:\n%s" % logit_model.params)
 
 # print(logit_model.predict(train_wine[:5]))
@@ -89,12 +91,18 @@ new_value = float(logit_model.params[0]) + \
         float(logit_model.params[2])*float(1.1) + \
         float(logit_model.params[3])*float(3.0)
 
-print("새로운 값을 넣어서 예측한 결과 %.2f" % new_value)
+print("\n 새로운 값을 넣어서 예측한 결과 %.2f \n" % new_value)
+
+print(independent_variables.columns)
+new_observations = wine.loc[wine.index.isin(range(10)), independent_variables.columns]
+new_observations_with_constant = sm.add_constant(new_observations, prepend=True)
+y_predicted = logit_model.predict(new_observations_with_constant)
+print(y_predicted)
 
 output_variable = wine['class']
 vars_to_keep = wine[['alcohol', 'sugar', 'pH']]
 inputs_standardized = (vars_to_keep - vars_to_keep.mean()) / vars_to_keep.std()
-input_variables = sm.add_constant(inputs_standardized, prepend=False)
+input_variables = sm.add_constant(inputs_standardized, prepend=True)
 logit_model = sm.Logit(output_variable, input_variables).fit()
 print(logit_model.summary())
 print(logit_model.params)
